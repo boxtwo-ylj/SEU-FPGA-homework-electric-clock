@@ -87,6 +87,7 @@ module electric_clock(
     reg[3:0]cnt_4;
     reg[3:0]cnt_5;
     reg [5:0]cnt_inc;
+    reg[5:0]cnt_dec;
 //    reg cnt_inc1;
 //    reg cnt_inc2;
 //    reg cnt_inc3;
@@ -124,7 +125,8 @@ module electric_clock(
             else 
                 cnt_s<=cnt_s+1'b1;
             
-            //秒表个位计数    
+            //秒表个位计数   
+            //按键加1 
             if(cnt_inc[0]==1)begin
                 if(cnt_0==9)begin
                     cnt_0<=0;
@@ -132,9 +134,20 @@ module electric_clock(
                 end
                 else 
                     cnt_0<=cnt_0+1'b1;
-            end  
+            end
+            //按键减1 
+            else if (cnt_dec[0]==1)
+                if(cnt_0==0)begin
+                    cnt_0=9;
+                    cnt_dec[1]<=1;
+                end
+                else 
+                    cnt_0<=cnt_0-1'b1;
             else if (cnt_inc[1]==1)
-                cnt_inc[1]<=0;      
+                cnt_inc[1]<=0;
+            else if (cnt_dec[1]==1)
+                cnt_dec[1]<=0; //清空进位状态，防止多次进位
+            //自动加1     
             else if(cnt_s==MCNT_S)begin
                 if(cnt_0==9)
                     cnt_0<=0;
@@ -148,13 +161,18 @@ module electric_clock(
                     cnt_1<=0;
                 else
                     cnt_1<=cnt_1+1'b1;
-            end
+            end                     //按键加1
+            else if (cnt_dec[1]==1)
+                if(cnt_1==0)
+                    cnt_1<=5;
+                else 
+                    cnt_1<=cnt_1-1'b1;//按键减1
             else if((cnt_0==9)&&(cnt_s==MCNT_S))begin
                 if(cnt_1==5)
                     cnt_1<=0;
                 else
                     cnt_1<=cnt_1+1'b1;
-            end    
+            end    //自动加1
             
         //分钟个位计数
             if(cnt_inc[2]==1)
@@ -162,15 +180,24 @@ module electric_clock(
                     cnt_2<=0;
                     cnt_inc[3]<=1;
                 end
-                else 
+                else //按键加1
                     cnt_2<=cnt_2+1'b1;
+            else if (cnt_dec[2]==1)
+                if(cnt_2==0)begin
+                    cnt_2<=9;
+                    cnt_dec[3]<=1;
+                end
+                else 
+                    cnt_2<=cnt_2-1'b1;//按键减1
+            else if (cnt_dec[3]==1)
+                cnt_dec[3]<=0; //清空进位状态，防止多次进位
             else if (cnt_inc[3]==1)
                 cnt_inc[3]<=0;   
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S))
                 if(cnt_2==9)
                     cnt_2<=0;
                 else
-                    cnt_2<=cnt_2+1'b1;
+                    cnt_2<=cnt_2+1'b1;//自动加1
         
         //分钟十位计数
             if(cnt_inc[3]==1)
@@ -178,6 +205,11 @@ module electric_clock(
                     cnt_3<=0;
                 else
                     cnt_3<=cnt_3+1'b1;
+            else if (cnt_dec[3]==1)
+                if(cnt_3==0)
+                    cnt_3<=5;
+                else 
+                    cnt_3<=cnt_3-1'b1;//按键减1
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S)&&(cnt_2==9))
                 if(cnt_3==5)
                     cnt_3<=0;
@@ -196,7 +228,19 @@ module electric_clock(
                 end
                 else 
                     cnt_4<=cnt_4+1'b1;
-            end 
+            end                     //按键加1
+            else if (cnt_dec[4]==1)
+                if(cnt_4==0)begin
+                    if(cnt_5==0)
+                        cnt_4<=3;
+                    else 
+                        cnt_4<=9;
+                    cnt_dec[5]<=1;
+                end
+                else 
+                    cnt_4<=cnt_4-1'b1;//按键减1
+            else if (cnt_dec[5]==1)
+                cnt_dec[5]<=0; //清空进位状态，防止多次进位 
             else if (cnt_inc[5]==1)
                 cnt_inc[5]<=0; 
             else if (f_clear==1)
@@ -214,9 +258,14 @@ module electric_clock(
             if(f_clear==1)
                 cnt_5<=0;
             else if(cnt_inc[5]==1)
-                cnt_5<=cnt_5+1'b1;
+                cnt_5<=cnt_5+1'b1;//按键加1
+            else if (cnt_dec[5]==1)
+                if(cnt_5==0)
+                    cnt_5<=2;
+                else 
+                    cnt_5<=cnt_5-1'b1;//按键减1
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S)&&(cnt_2==9)&&(cnt_3==5)&&(cnt_4==9))
-                    cnt_5<=cnt_5+1'b1;
+                    cnt_5<=cnt_5+1'b1;//自动加1
         end
     //状态机
     always@(posedge Clk or negedge Reset_n)
@@ -230,6 +279,13 @@ module electric_clock(
         cnt_inc[2]<=0;
     else if(cnt_inc[4]==1)
         cnt_inc[4]<=0;
+    else if(cnt_dec[0]==1)
+        cnt_dec[0]<=0;
+    else if(cnt_dec[2]==1)
+        cnt_dec[2]<=0;
+    else if(cnt_dec[4]==1)
+        cnt_dec[4]<=0;//清空进位状态，防止多次进位
+
     else case(state1)
             CLOCK:
                 if(Key_P_flag[3]==1)
@@ -243,17 +299,23 @@ module electric_clock(
                             if(Key_P_flag[2]==1)
                                 state2<=1;
                             else if(Key_P_flag[1]==1)
-                                cnt_inc[0]<=1;
+                                cnt_inc[0]<=1;//按键1，秒表个位加1
+                            else if(Key_P_flag[0]==1)
+                                cnt_dec[0]<=1;//按键0，秒表个位减1
                         1:
                             if(Key_P_flag[2]==1)
                                 state2<=2;
                             else if(Key_P_flag[1]==1)
                                 cnt_inc[2]<=1;
+                            else if(Key_P_flag[0]==1)
+                                cnt_dec[2]<=1;
                         2:
                             if(Key_P_flag[2]==1)
                                 state2<=0;
                             else if(Key_P_flag[1]==1)
                                 cnt_inc[4]<=1;
+                            else if(Key_P_flag[0]==1)   
+                                cnt_dec[4]<=1;
                         default:
                             state2<=0;
                     endcase
