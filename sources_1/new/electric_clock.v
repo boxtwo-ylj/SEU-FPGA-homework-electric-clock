@@ -86,13 +86,8 @@ module electric_clock(
     reg[3:0]cnt_3;
     reg[3:0]cnt_4;
     reg[3:0]cnt_5;
-    reg [5:0]cnt_inc;
+    reg[5:0]cnt_inc;
     reg[5:0]cnt_dec;
-//    reg cnt_inc1;
-//    reg cnt_inc2;
-//    reg cnt_inc3;
-//    reg cnt_inc4;
-//    reg cnt_inc5;
     reg f_clear;
     
     
@@ -107,7 +102,7 @@ module electric_clock(
     
     //时分秒计时显示
     
-    always@(posedge Clk or negedge Reset_n)
+    always@(posedge Clk or negedge Reset_n)begin
         if(!Reset_n) begin
             cnt_s<=0;
             cnt_0<=0;
@@ -127,14 +122,13 @@ module electric_clock(
             
             //秒表个位计数   
             //按键加1 
-            if(cnt_inc[0]==1)begin
+            if(cnt_inc[0]==1)
                 if(cnt_0==9)begin
                     cnt_0<=0;
                     cnt_inc[1]<=1;
                 end
                 else 
                     cnt_0<=cnt_0+1'b1;
-            end
             //按键减1 
             else if (cnt_dec[0]==1)
                 if(cnt_0==0)begin
@@ -148,31 +142,31 @@ module electric_clock(
             else if (cnt_dec[1]==1)
                 cnt_dec[1]<=0; //清空进位状态，防止多次进位
             //自动加1     
-            else if(cnt_s==MCNT_S)begin
+            else if(cnt_s==MCNT_S)
                 if(cnt_0==9)
                     cnt_0<=0;
                 else
                     cnt_0<=cnt_0+1'b1;
-            end    
-            
-        //秒表十位计数    
-            if(cnt_inc[1]==1)begin
+            //秒表十位计数    
+            if(cnt_inc[1]==1)
                 if(cnt_1==5)
                     cnt_1<=0;
                 else
                     cnt_1<=cnt_1+1'b1;
-            end                     //按键加1
+            //按键加1
             else if (cnt_dec[1]==1)
                 if(cnt_1==0)
                     cnt_1<=5;
                 else 
-                    cnt_1<=cnt_1-1'b1;//按键减1
+                    cnt_1<=cnt_1-1'b1;
+            //按键减1
             else if((cnt_0==9)&&(cnt_s==MCNT_S))begin
                 if(cnt_1==5)
                     cnt_1<=0;
                 else
                     cnt_1<=cnt_1+1'b1;
-            end    //自动加1
+            end   
+            //自动加1
             
         //分钟个位计数
             if(cnt_inc[2]==1)
@@ -180,24 +174,28 @@ module electric_clock(
                     cnt_2<=0;
                     cnt_inc[3]<=1;
                 end
-                else //按键加1
+                else 
                     cnt_2<=cnt_2+1'b1;
+            //按键加1
             else if (cnt_dec[2]==1)
                 if(cnt_2==0)begin
                     cnt_2<=9;
                     cnt_dec[3]<=1;
                 end
                 else 
-                    cnt_2<=cnt_2-1'b1;//按键减1
+                    cnt_2<=cnt_2-1'b1;
+            //按键减1
             else if (cnt_dec[3]==1)
-                cnt_dec[3]<=0; //清空进位状态，防止多次进位
+                cnt_dec[3]<=0; 
             else if (cnt_inc[3]==1)
-                cnt_inc[3]<=0;   
+                cnt_inc[3]<=0;  
+            //清空进位状态，防止多次进位
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S))
                 if(cnt_2==9)
                     cnt_2<=0;
                 else
-                    cnt_2<=cnt_2+1'b1;//自动加1
+                    cnt_2<=cnt_2+1'b1;
+            //自动加1
         
         //分钟十位计数
             if(cnt_inc[3]==1)
@@ -205,11 +203,13 @@ module electric_clock(
                     cnt_3<=0;
                 else
                     cnt_3<=cnt_3+1'b1;
+            //按键加1
             else if (cnt_dec[3]==1)
                 if(cnt_3==0)
                     cnt_3<=5;
                 else 
-                    cnt_3<=cnt_3-1'b1;//按键减1
+                    cnt_3<=cnt_3-1'b1;
+            //按键减1
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S)&&(cnt_2==9))
                 if(cnt_3==5)
                     cnt_3<=0;
@@ -217,7 +217,7 @@ module electric_clock(
                     cnt_3<=cnt_3+1'b1; 
         
         //时钟个位计数
-            if(cnt_inc[4]==1)begin
+            if(cnt_inc[4]==1)
                 if((cnt_5==2)&&(cnt_4==3))begin
                     cnt_4<=0;
                     f_clear<=1;
@@ -228,7 +228,7 @@ module electric_clock(
                 end
                 else 
                     cnt_4<=cnt_4+1'b1;
-            end                     //按键加1
+            //按键加1
             else if (cnt_dec[4]==1)
                 if(cnt_4==0)begin
                     if(cnt_5==0)
@@ -238,11 +238,13 @@ module electric_clock(
                     cnt_dec[5]<=1;
                 end
                 else 
-                    cnt_4<=cnt_4-1'b1;//按键减1
+                    cnt_4<=cnt_4-1'b1;
+            //按键减1
             else if (cnt_dec[5]==1)
-                cnt_dec[5]<=0; //清空进位状态，防止多次进位 
+                cnt_dec[5]<=0; 
             else if (cnt_inc[5]==1)
-                cnt_inc[5]<=0; 
+                cnt_inc[5]<=0;
+            //清空进位状态，防止多次进位 
             else if (f_clear==1)
                 f_clear<=0;
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S)&&(cnt_2==9)&&(cnt_3==5)&&(cnt_4==3)&&(cnt_5==2))begin
@@ -258,17 +260,21 @@ module electric_clock(
             if(f_clear==1)
                 cnt_5<=0;
             else if(cnt_inc[5]==1)
-                cnt_5<=cnt_5+1'b1;//按键加1
+                cnt_5<=cnt_5+1'b1;
+            //按键加1
             else if (cnt_dec[5]==1)
                 if(cnt_5==0)
                     cnt_5<=2;
                 else 
-                    cnt_5<=cnt_5-1'b1;//按键减1
+                    cnt_5<=cnt_5-1'b1;
+            //按键减1
             else if((cnt_1==5)&&(cnt_0==9)&&(cnt_s==MCNT_S)&&(cnt_2==9)&&(cnt_3==5)&&(cnt_4==9))
-                    cnt_5<=cnt_5+1'b1;//自动加1
+                    cnt_5<=cnt_5+1'b1;
+            //自动加1
         end
     //状态机
-    always@(posedge Clk or negedge Reset_n)
+    end
+    always@(posedge Clk or negedge Reset_n)begin
     if(!Reset_n)begin
         state1<=0;
         state2<=0;
@@ -328,7 +334,7 @@ module electric_clock(
             default:
                 state1<=CLOCK;
         endcase
-    
+    end
     always@(posedge Clk)
         Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
     
