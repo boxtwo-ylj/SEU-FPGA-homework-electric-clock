@@ -40,7 +40,6 @@ module calendar_tb();
     initial begin
         Reset_n=0;
         cnt_inc=3'b000;
-        cnt_dec=3'b000;
         full_flag=0;
         #201;
         Reset_n=1;
@@ -61,7 +60,7 @@ module calendar_tb();
         // #40000;
         // full_flag=0;
         // #100;
-         cnt_dec=3'b001;
+        cnt_dec=3'b001;
         #2000;
         cnt_dec=3'b000;
         #1000;

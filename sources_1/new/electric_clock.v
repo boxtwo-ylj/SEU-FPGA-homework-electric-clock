@@ -43,6 +43,30 @@ module electric_clock(
     wire [3:0]Key_R_flag;
     
     assign Point=4'hA;
+    
+    reg[29:0]cnt_s;
+    reg[3:0]cnt_0;
+    reg[3:0]cnt_1;
+    reg[3:0]cnt_2;
+    reg[3:0]cnt_3;
+    reg[3:0]cnt_4;
+    reg[3:0]cnt_5;
+    reg[5:0]cnt_inc;
+    reg[5:0]cnt_dec;
+    reg[2:0]cnt_inc_c;
+    reg[2:0]cnt_dec_c;
+    reg f_clear;
+    
+    
+    parameter MCNT_S=50_000_000-1;
+    
+    localparam CLOCK=0;
+    localparam CLOCK_C=1;
+    localparam CALENDAR=2;
+    localparam CALENDAR_C=3;
+    localparam ALARM=4;
+    localparam COUNTER_D=5;
+    
     //数码管驱动
     hex8 hex8_inst(
     .Clk(Clk),
@@ -80,30 +104,8 @@ module electric_clock(
     .Key_P_flag(Key_P_flag[3]),
     .Key_R_flag(Key_R_flag[3])
     );
-    reg[29:0]cnt_s;
-    reg[3:0]cnt_0;
-    reg[3:0]cnt_1;
-    reg[3:0]cnt_2;
-    reg[3:0]cnt_3;
-    reg[3:0]cnt_4;
-    reg[3:0]cnt_5;
-    reg[5:0]cnt_inc;
-    reg[5:0]cnt_dec;
-    reg[3:0]cnt_inc_c;
-    reg[3:0]cnt_dec_c;
-    reg full_flag;
-    reg f_clear;
-    
-    
-    parameter MCNT_S=50_000_000-1;
-    
-    localparam CLOCK=0;
-    localparam CLOCK_C=1;
-    localparam CALENDAR=2;
-    localparam CALENDAR_C=3;
-    localparam ALARM=4;
-    localparam COUNTER_D=5;
-    
+
+
     //时分秒计时显示
     
     always@(posedge Clk or negedge Reset_n)begin
@@ -282,7 +284,8 @@ module electric_clock(
     .Clk(Clk),
     .Reset_n(Reset_n),
     .cnt_inc(cnt_inc_c),
-    .full_flag(full_flag),
+    .cnt_dec(cnt_dec_c),
+    .full_flag(f_clear),
     .Data(Data_calendar)
     );
     //状态机
@@ -302,16 +305,32 @@ module electric_clock(
     else if(cnt_dec[2]==1)
         cnt_dec[2]<=0;
     else if(cnt_dec[4]==1)
-        cnt_dec[4]<=0;//清空进位状态，防止多次进位
+        cnt_dec[4]<=0;
+    else if(cnt_inc_c[0]==1)
+        cnt_inc_c[0]<=0;
+    else if(cnt_inc_c[1]==1)
+        cnt_inc_c[1]<=0;
+    else if(cnt_inc_c[2]==1)
+        cnt_inc_c[2]<=0;
+    else if(cnt_dec_c[0]==1)
+        cnt_dec_c[0]<=0;
+    else if(cnt_dec_c[1]==1)
+        cnt_dec_c[1]<=0;
+    else if(cnt_dec_c[2]==1)
+        cnt_dec_c[2]<=0;
+        //清空进位状态，防止多次进位
 
     else case(state1)
-            CLOCK:
+            CLOCK:begin//时钟显示
+                state2<=0;
                 if(Key_P_flag[3]==1)
                     state1<=CLOCK_C;
-            CLOCK_C:
+            end
+            CLOCK_C:begin//时钟设置
                 if(Key_P_flag[3]==1)
                     state1<=CALENDAR;
                 else if(cnt_s!=MCNT_S)
+                    
                     case(state2)
                         0:
                             if(Key_P_flag[2]==1)
@@ -337,17 +356,50 @@ module electric_clock(
                         default:
                             state2<=0;
                     endcase
-            CALENDAR:
+            end
+            CALENDAR:begin  //日期显示
+                state2<=0;
                 if(Key_P_flag[3]==1)
                     state1<=CALENDAR_C;
-            CALENDAR_C:
+            end
+            CALENDAR_C:begin
                 if(Key_P_flag[3]==1)
                     state1<=CLOCK;
+                else
+                    case(state2)
+                            0:
+                                if(Key_P_flag[2]==1)
+                                    state2<=1;
+                                else if(Key_P_flag[1]==1)
+                                    cnt_inc_c[0]<=1;
+                                else if(Key_P_flag[0]==1)
+                                    cnt_dec_c[0]<=1;
+                            1:
+                                if(Key_P_flag[2]==1)
+                                    state2<=2;
+                                else if(Key_P_flag[1]==1)
+                                    cnt_inc_c[1]<=1;
+                                else if(Key_P_flag[0]==1)
+                                    cnt_dec_c[1]<=1;
+                            2:
+                                if(Key_P_flag[2]==1)
+                                    state2<=0;
+                                else if(Key_P_flag[1]==1)
+                                    cnt_inc_c[2]<=1;
+                                else if(Key_P_flag[0]==1)
+                                    cnt_dec_c[2]<=1;
+                            default:
+                                state2<=0;
+                endcase//按键控制日期
+            end
             default:
                 state1<=CLOCK;
         endcase
     end
-    always@(posedge Clk)
-        Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
-    
+    always@(posedge Clk)begin
+        if(state1==CLOCK||state1==CLOCK_C)
+            Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
+        else if(state1==CALENDAR||state1==CALENDAR_C)
+            Data<=Data_calendar;
+    end
 endmodule
