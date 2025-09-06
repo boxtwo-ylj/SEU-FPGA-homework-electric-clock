@@ -153,6 +153,38 @@ module calendar(
                 else
                     cnt_4<=cnt_4+1;
             //Äê¼ÆÊýÆ÷
+            else if(full_flag==1) begin
+                if(day_full==1)begin
+                    cnt_0<=1;
+                    cnt_1<=0;
+                    if(month_full==1)begin
+                        cnt_2<=1;
+                        cnt_3<=0;
+                        if(year_full==1) begin
+                            cnt_4<=0;
+                            cnt_5<=0;
+                        end
+                        else if((cnt_4==9))begin
+                            cnt_4<=0;
+                            cnt_5<=cnt_5+1;
+                        end
+                        else
+                            cnt_4<=cnt_4+1;
+                    end
+                    else if((cnt_2==9))begin
+                        cnt_2<=0;
+                        cnt_3<=cnt_3+1;
+                    end
+                    else
+                        cnt_2<=cnt_2+1;
+                end
+                else if(cnt_0==9) begin
+                    cnt_0<=0;
+                    cnt_1<=cnt_1+1;
+                end
+                else
+                    cnt_0<=cnt_0+1;
+            end
         end
     end
     always@(posedge Clk)begin
