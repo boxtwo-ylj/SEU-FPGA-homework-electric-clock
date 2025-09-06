@@ -88,20 +88,20 @@ module calendar(
         end
         else if((month_b==0)&&(cnt_2==2))begin
             if(leap_year==1) begin
-                if((cnt_1==2)&&(cnt_0==9))
+                if(((cnt_1==2)&&(cnt_0==9))||(cnt_1==3))
                     day_full=1;
                 else
                     day_full=0;//闰年二月
             end
             else if(leap_year==0) begin
-                if((cnt_1==2)&&(cnt_0==8))
+                if(((cnt_1==2)&&(cnt_0>=8))||(cnt_1==3))
                     day_full=1;
                 else
                     day_full=0;//平年二月
             end
         end
         else if(month_b==0) begin
-            if((cnt_1==3)&&(cnt_0==0))
+            if(cnt_1==3)
                 day_full=1;
             else
                 day_full=0;//小月

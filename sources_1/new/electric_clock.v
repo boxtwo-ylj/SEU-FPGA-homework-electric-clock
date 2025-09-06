@@ -30,36 +30,39 @@ module electric_clock(
     input Clk;
     input Reset_n;
     input [3:0]Key;
-    output [7:0]SEL;
-    output [7:0]SEG;
+    output [7:0]SEL;//数码管位选
+    output [7:0]SEG;//数码管段选
     
     reg [31:0]Data;
     wire [31:0]Data_calendar;
     reg [2:0]state1;
-    reg [2:0]state2;
+    reg [2:0]state2;//状态机状态变量
     
     wire[3:0]Point;
     wire [3:0]Key_P_flag;
-    wire [3:0]Key_R_flag;
+    wire [3:0]Key_R_flag;//按键按下和释放标志
     
     assign Point=4'hA;
     
     reg[29:0]cnt_s;
+    reg[29:0]cnt_flash;//1秒计时器，闪烁计时器
     reg[3:0]cnt_0;
     reg[3:0]cnt_1;
     reg[3:0]cnt_2;
     reg[3:0]cnt_3;
     reg[3:0]cnt_4;
-    reg[3:0]cnt_5;
-    reg[5:0]cnt_inc;
-    reg[5:0]cnt_dec;
-    reg[2:0]cnt_inc_c;
-    reg[2:0]cnt_dec_c;
-    reg f_clear;
+    reg[3:0]cnt_5;//时钟计数器
+    reg[5:0]cnt_inc;//按键加1标志
+    reg[5:0]cnt_dec;//按键减1标志
+    reg[2:0]cnt_inc_c;//时钟计数加
+    reg[2:0]cnt_dec_c;//时钟计数减
+    reg f_clear;//清零标志
     
-    
+    //参数定义
+    parameter MCNT_F=25_000_000-1;
     parameter MCNT_S=50_000_000-1;
     
+    //状态机状态定义
     localparam CLOCK=0;
     localparam CLOCK_C=1;
     localparam CALENDAR=2;
@@ -396,10 +399,49 @@ module electric_clock(
                 state1<=CLOCK;
         endcase
     end
+    //闪烁计时器
+    always@(posedge Clk or negedge Reset_n)begin
+        if(!Reset_n)
+            cnt_flash<=0;
+        else
+            if(cnt_flash==MCNT_F)
+                cnt_flash<=0;
+            else
+                cnt_flash<=cnt_flash+1;
+    end
+    //数码管显示数据选择
     always@(posedge Clk)begin
-        if(state1==CLOCK||state1==CLOCK_C)
-            Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
-        else if(state1==CALENDAR||state1==CALENDAR_C)
-            Data<=Data_calendar;
+        case(state1)
+            CLOCK:
+                Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
+            CLOCK_C:
+                //时钟设置闪烁
+                if(cnt_flash<MCNT_F/2)
+                    Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
+                else if(state2==0)
+                    Data<={4'hB,4'hB,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
+                else if(state2==1)
+                    Data<={cnt_0,cnt_1,Point,4'hB,4'hB,Point,cnt_4,cnt_5};
+                else if(state2==2)
+                    Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,4'hB,4'hB};
+                else
+                    Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
+            CALENDAR:
+                Data<=Data_calendar;
+            CALENDAR_C:
+                //日期设置闪烁
+                if(cnt_flash<MCNT_F/2)
+                    Data<=Data_calendar;
+                else if(state2==0)
+                    Data<={4'hB,4'hB,Data_calendar[23:20],Data_calendar[19:16],Data_calendar[15:12],Data_calendar[11:8],Data_calendar[7:4],Data_calendar[3:0]};
+                else if(state2==1)
+                    Data<={Data_calendar[31:28],Data_calendar[27:24],4'hB,4'hB,Data_calendar[15:12],Data_calendar[11:8],Data_calendar[7:4],Data_calendar[3:0]};
+                else if(state2==2)
+                    Data<={Data_calendar[31:28],Data_calendar[27:24],Data_calendar[23:20],Data_calendar[19:16],4'hB,4'hB,4'hB,4'hB};
+                else
+                    Data<=Data_calendar;
+            default:
+                state1<=CLOCK;
+        endcase
     end
 endmodule

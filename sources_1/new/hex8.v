@@ -91,6 +91,7 @@ module hex8(
         8:SEG<=8'b1000_0000;
         9:SEG<=8'b1001_0000;
         10:SEG<=8'b1011_1111;
+        11:SEG<=8'b1111_1111;
         default:SEG<=8'b0000_0000;
     endcase
    
