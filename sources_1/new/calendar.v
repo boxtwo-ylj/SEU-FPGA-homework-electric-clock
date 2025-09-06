@@ -24,12 +24,14 @@ module calendar(
     Clk,
     Reset_n,
     cnt_inc,
+    cnt_dec,
     full_flag,
     Data
     );
     input Clk;
     input Reset_n;
     input [2:0]cnt_inc;
+    input [2:0]cnt_dec;
     input full_flag;
     output reg[31:0]Data;
 
@@ -127,7 +129,33 @@ module calendar(
                 end
                 else
                     cnt_0<=cnt_0+1;
-                
+            else if (cnt_dec[0]==1)
+                if(cnt_0==1&&cnt_1==0) begin
+                    if(month_b==1)begin
+                        cnt_0<=1;
+                        cnt_1<=3;
+                    end
+                    else if(month_b==0&&cnt_2==2) begin
+                        if(leap_year==1) begin
+                            cnt_0<=9;
+                            cnt_1<=2;
+                        end
+                        else if(leap_year==0) begin
+                            cnt_0<=8;
+                            cnt_1<=2;
+                        end
+                    end
+                    else begin
+                        cnt_0<=0;
+                        cnt_1<=3;
+                    end
+                end
+                else if(cnt_0==0) begin
+                    cnt_0<=9;
+                    cnt_1<=cnt_1-1;
+                end
+                else
+                    cnt_0<=cnt_0-1;
             //日计数器
             if(cnt_inc[1]==1)
                 if(month_full==1)begin
@@ -140,6 +168,17 @@ module calendar(
                 end
                 else
                     cnt_2<=cnt_2+1;
+            else if(cnt_dec[1]==1)
+                if(cnt_2==1&&cnt_3==0)begin
+                    cnt_2<=2;
+                    cnt_3<=1;
+                end
+                else if(cnt_2==0)begin
+                    cnt_2<=9;
+                    cnt_3<=cnt_3-1;
+                end
+                else
+                    cnt_2<=cnt_2-1;
             //月计数器
             if(cnt_inc[2]==1)
                 if((year_full==1)) begin
@@ -152,8 +191,19 @@ module calendar(
                 end
                 else
                     cnt_4<=cnt_4+1;
+            else if(cnt_dec[2]==1)
+                if(cnt_4==0&&cnt_5==0)begin
+                    cnt_4<=9;
+                    cnt_5<=9;
+                end
+                else if(cnt_4==0)begin
+                    cnt_4<=9;
+                    cnt_5<=cnt_5-1;
+                end
+                else
+                    cnt_4<=cnt_4-1;
             //年计数器
-            else if(full_flag==1) begin
+            if(full_flag==1) begin
                 if(day_full==1)begin
                     cnt_0<=1;
                     cnt_1<=0;

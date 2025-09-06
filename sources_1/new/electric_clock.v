@@ -34,6 +34,7 @@ module electric_clock(
     output [7:0]SEG;
     
     reg [31:0]Data;
+    wire [31:0]Data_calendar;
     reg [2:0]state1;
     reg [2:0]state2;
     
@@ -88,6 +89,9 @@ module electric_clock(
     reg[3:0]cnt_5;
     reg[5:0]cnt_inc;
     reg[5:0]cnt_dec;
+    reg[3:0]cnt_inc_c;
+    reg[3:0]cnt_dec_c;
+    reg full_flag;
     reg f_clear;
     
     
@@ -272,8 +276,16 @@ module electric_clock(
                     cnt_5<=cnt_5+1'b1;
             //自动加1
         end
+    end 
+    //日历计数显示
+    calendar calendar_inst(
+    .Clk(Clk),
+    .Reset_n(Reset_n),
+    .cnt_inc(cnt_inc_c),
+    .full_flag(full_flag),
+    .Data(Data_calendar)
+    );
     //状态机
-    end
     always@(posedge Clk or negedge Reset_n)begin
     if(!Reset_n)begin
         state1<=0;
