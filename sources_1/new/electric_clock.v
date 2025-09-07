@@ -441,7 +441,7 @@ module electric_clock(
                 else
                     Data<=Data_calendar;
             default:
-                state1<=CLOCK;
+                Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
         endcase
     end
 endmodule
