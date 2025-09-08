@@ -42,6 +42,7 @@ module electric_clock(
     reg [31:0]Data_alarm_s1;
     reg [31:0]Data_alarm_s2;
     reg [31:0]Data_alarm_s3;//数码管显示数据
+    wire [31:0]Data_counter_down;
     reg [2:0]state1;
     reg [2:0]state2;//状态机状态变量
     reg[1:0]key_state;//按键状态变量
@@ -57,6 +58,7 @@ module electric_clock(
     reg[29:0]cnt_flash;//1秒计时器，闪烁计时器
     reg[29:0]cnt_key_time;//按键长按计时器
     reg[29:0]cnt_alarm_time;//闹钟响铃计时器
+    reg[29:0]cnt_counter_down_flash;//倒计时闪烁计时器
     reg[3:0]cnt_0;
     reg[3:0]cnt_1;
     reg[3:0]cnt_2;
@@ -69,8 +71,14 @@ module electric_clock(
     reg[2:0]cnt_dec_c;//时钟计数减
     reg[2:0]cnt_inc_a;//闹钟计数加
     reg[2:0]cnt_dec_a;//闹钟计数减
+    reg[2:0]cnt_inc_d;//倒计时加
+    reg[2:0]cnt_dec_d;//倒计时减
     reg f_clear;//清零标志
     reg [2:0]alarm_set;//闹钟设置标志
+    reg [29:0]cnt_down;//倒计时开始标志
+    reg count_d;//倒计时计数标志
+    reg start_flag;//倒计时开始标志
+    reg reset_flag;//倒计时复位标志
     
     //参数定义
     parameter MCNT_F=25_000_000-1;
@@ -85,7 +93,8 @@ module electric_clock(
     localparam CALENDAR=2;
     localparam CALENDAR_C=3;
     localparam ALARM=4;
-    localparam COUNTER_D=5;
+    localparam COUNTER_D_SET=5;
+    localparam COUNTER_D_START=6;
     
     //数码管驱动
     hex8 hex8_inst(
@@ -308,6 +317,7 @@ module electric_clock(
     .full_flag(f_clear),
     .Data(Data_calendar)
     );
+    //闹钟设置显示
     alarm alarm_inst1(
     .Clk(Clk),
     .Reset_n(Reset_n),
@@ -315,8 +325,17 @@ module electric_clock(
     .cnt_dec(cnt_dec_a),
     .Data(Data_alarm)
     );
-
-
+    //倒计时设置显示
+    counter_down counter_down_inst(
+    .Clk(Clk),
+    .Reset_n(Reset_n),
+    .cnt_inc(cnt_inc_d),
+    .cnt_dec(cnt_dec_d),
+    .cnt_down(count_d),
+    .start_flag(start_flag),
+    .reset_flag(reset_flag),
+    .Data(Data_counter_down)
+    );
     //状态机
     always@(posedge Clk or negedge Reset_n)begin
     if(!Reset_n)begin
@@ -326,6 +345,10 @@ module electric_clock(
         Data_alarm_s1<=32'hffff_ffff;
         Data_alarm_s2<=32'hffff_ffff;
         Data_alarm_s3<=32'hffff_ffff;
+        count_d<=0;
+        cnt_down<=0;
+        start_flag<=0;
+        reset_flag<=0;
     end
     else if(cnt_inc[0]==1)
         cnt_inc[0]<=0;
@@ -363,8 +386,18 @@ module electric_clock(
         cnt_dec_a[1]<=0;
     else if(cnt_dec_a[2]==1)
         cnt_dec_a[2]<=0;
-        //清空进位状态，防止多次进位
-
+    else if(cnt_inc_d[0]==1)
+        cnt_inc_d[0]<=0;
+    else if(cnt_inc_d[1]==1)
+        cnt_inc_d[1]<=0;
+    else if(cnt_inc_d[2]==1)
+        cnt_inc_d[2]<=0;
+    else if(cnt_dec_d[0]==1)
+        cnt_dec_d[0]<=0;
+    else if(cnt_dec_d[1]==1)
+        cnt_dec_d[1]<=0;
+    else if(cnt_dec_d[2]==1)
+        cnt_dec_d[2]<=0;
     else case(state1)
             CLOCK:begin//时钟显示
                 state2<=0;
@@ -438,8 +471,10 @@ module electric_clock(
                 endcase//按键控制日期
             end
             ALARM:begin
-                if(Key_P_flag[3]==1)
-                    state1<=CLOCK;
+                if(Key_P_flag[3]==1)begin
+                    state1<=COUNTER_D_SET;
+                    state2<=0;
+                end
                 else if(key_state==3)begin
                     if(alarm_set[0]==0)begin
                         alarm_set[0]<=1;
@@ -487,6 +522,110 @@ module electric_clock(
                             state2<=0;
                     endcase
             end
+            COUNTER_D_SET:begin
+                reset_flag<=0;
+                if(Key_P_flag[3]==1)
+                    state1<=CLOCK;
+                else if(key_state==3)begin//长按开始倒计时
+                    state1<=COUNTER_D_START;
+                    start_flag<=1;
+                    state2<=0;
+                end
+                else
+                    case(state2)
+                        0:
+                            if(key_state==2)//短按切换倒计时位数
+                                state2<=1;
+                            else if(Key_P_flag[1]==1)
+                                cnt_inc_d[0]<=1;
+                            else if(Key_P_flag[0]==1)
+                                cnt_dec_d[0]<=1;
+                        1:
+                            if(key_state==2)
+                                state2<=2;
+                            else if(Key_P_flag[1]==1)
+                                cnt_inc_d[1]<=1;
+                            else if(Key_P_flag[0]==1)
+                                cnt_dec_d[1]<=1;
+                        2:
+                            if(key_state==2)
+                                state2<=0;
+                            else if(Key_P_flag[1]==1)
+                                cnt_inc_d[2]<=1;
+                            else if(Key_P_flag[0]==1)   
+                                cnt_dec_d[2]<=1;
+                        default:
+                            state2<=0;
+                    endcase
+            end
+            COUNTER_D_START:begin
+                start_flag<=0;
+                case(state2)
+                    0:begin//倒计时开始
+                        
+                        if(key_state==2)begin
+                            state2<=1;
+                            cnt_down<=0;
+                        end
+                        else if(Key_P_flag[3]==1)begin
+                            state1<=CLOCK;
+                            state2<=0;
+                            cnt_down<=0;
+                        end
+                        
+                        else if(Data_counter_down=={4'h0,4'h0,4'hA,4'h0,4'h0,4'hA,4'h0,4'h0})begin
+                            count_d<=0;
+                            cnt_down<=0;
+                            state2<=2;
+                        end
+                        else if(cnt_down==MCNT_S)begin
+                            cnt_down<=0;
+                            count_d<=1;
+                        end
+                        else begin
+                            count_d<=0;
+                            cnt_down<=cnt_down+1'b1;
+                        end
+                    end
+                    1:begin//倒计时暂停
+                        count_d<=0;
+                        if(key_state==2)
+                            state2<=0;
+                        else if(key_state==3)begin//长按复位
+                            reset_flag<=1;
+                            cnt_down<=0;
+                            state2<=0;
+                            state1<=COUNTER_D_SET;
+                        end
+                        else if(Key_P_flag[3]==1)begin
+                            state1<=CLOCK;
+                            state2<=0;
+                            cnt_down<=0;
+                        end
+                    end
+                    2:begin//倒计时结束闪烁
+                        cnt_counter_down_flash<=cnt_counter_down_flash+1'b1;
+                        if(cnt_counter_down_flash==MCNT_5S)begin
+                            cnt_counter_down_flash<=0;
+                            state2<=0;
+                            state1<=CLOCK;
+                        end
+                        if(Key_P_flag[3]==1)begin
+                            state1<=CLOCK;
+                            state2<=0;
+                            cnt_counter_down_flash<=0;
+                        end
+
+                    end
+
+                    default:begin
+                        state2<=0;
+                        count_d<=0;
+                    end
+                endcase
+                    
+            end
+
             default:
                 state1<=CLOCK;
         endcase
@@ -574,6 +713,20 @@ module electric_clock(
                     Data<={Data_alarm[31:28],Data_alarm[27:24],Data_alarm[23:20],Data_alarm[19:16],Data_alarm[15:12],Data_alarm[11:8],4'hB,4'hB};
                 else
                     Data<=Data_alarm;
+            COUNTER_D_SET:
+                //倒计时设置闪烁
+                if(cnt_flash<MCNT_F/2)
+                    Data<=Data_counter_down;
+                else if(state2==0)
+                    Data<={4'hB,4'hB,Data_counter_down[23:20],Data_counter_down[19:16],Data_counter_down[15:12],Data_counter_down[11:8],Data_counter_down[7:4],Data_counter_down[3:0]};
+                else if(state2==1) 
+                    Data<={Data_counter_down[31:28],Data_counter_down[27:24],Data_counter_down[23:20],4'hB,4'hB,Data_counter_down[11:8],Data_counter_down[7:4],Data_counter_down[3:0]};
+                else if(state2==2)
+                    Data<={Data_counter_down[31:28],Data_counter_down[27:24],Data_counter_down[23:20],Data_counter_down[19:16],Data_counter_down[15:12],Data_counter_down[11:8],4'hB,4'hB};
+                else
+                    Data<=Data_counter_down;
+            COUNTER_D_START:
+                Data<=Data_counter_down;
             default:
                 Data<={cnt_0,cnt_1,Point,cnt_2,cnt_3,Point,cnt_4,cnt_5};
         endcase
@@ -588,6 +741,11 @@ module electric_clock(
             LED[3]<=0;
             alarm_state<=0;
         end
+        else if(state1==COUNTER_D_START&&state2==2)//倒计时结束闪烁
+            if(cnt_flash<MCNT_F/2)
+                LED[3]<=1;
+            else
+                LED[3]<=0;
         else
             case(alarm_state)
                 0:begin
@@ -636,5 +794,4 @@ module electric_clock(
                     alarm_state<=0;
             endcase
     end
-
 endmodule

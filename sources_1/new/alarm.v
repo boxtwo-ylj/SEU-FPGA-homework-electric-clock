@@ -94,11 +94,11 @@ module alarm(
                 else
                     cnt_2<=cnt_2-1;
             if(cnt_inc[2]==1)
-                if(cnt_4==2&&cnt_5==1)begin
+                if(cnt_4==3&&cnt_5==2)begin
                     cnt_4<=0;
                     cnt_5<=0;
                 end
-                else if(cnt_4==9&&cnt_5==0)begin
+                else if(cnt_4==9)begin
                     cnt_4<=0;
                     cnt_5<=cnt_5+1;
                 end
@@ -107,14 +107,12 @@ module alarm(
             else if(cnt_dec[2]==1)
                 if(cnt_4==0)begin
                     if(cnt_5==0)begin
-                        cnt_4<=2;
-                        cnt_5<=1;
+                        cnt_4<=3;
+                        cnt_5<=2;
                     end
                     else begin
-                        if(cnt_5==1)begin
-                            cnt_4<=9;
-                            cnt_5<=0;
-                        end
+                        cnt_4<=9;
+                        cnt_5<=cnt_5-1;
                     end
                 end
                 else
