@@ -34,7 +34,6 @@ module alarm_tb();
         .cnt_dec(cnt_dec),
         .Data(Data)
     );
-
     initial Clk = 1;
     always #10 Clk = ~Clk; // 10nsÊ±ÖÓÖÜÆÚ
 

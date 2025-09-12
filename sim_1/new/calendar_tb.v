@@ -40,38 +40,35 @@ module calendar_tb();
     initial begin
         Reset_n=0;
         cnt_inc=3'b000;
+        cnt_dec=3'b000;
         full_flag=0;
-        #201;
+        #101;
         Reset_n=1;
-        #1000;
-        // cnt_inc=3'b001;
-        // #2000;
-        // cnt_inc=3'b000;
-        // #1000;
-        // cnt_inc=3'b010;
-        // #2000;
-        // cnt_inc=3'b000;
-        // #1000;
-        // cnt_inc=3'b100;
-        // #2000;
-        // cnt_inc=3'b000;
-        // #1000;
-        // full_flag=1;
-        // #40000;
-        // full_flag=0;
-        // #100;
-        cnt_dec=3'b001;
-        #2000;
+        #100;
+        cnt_inc=3'b001;//日期加1
+        #100;
+        cnt_inc=3'b000;
+        #20;
+        cnt_inc=3'b010;//月份加1
+        #100;
+        cnt_inc=3'b000;
+        #20;
+        cnt_inc=3'b100;//年份加1
+        #100;
+        cnt_inc=3'b000;
+        #20;
+        cnt_dec=3'b001;//日期减1
+        #100;
         cnt_dec=3'b000;
-        #1000;
-        cnt_dec=3'b010;
-        #2000;
+        #20;
+        cnt_dec=3'b010;//月份减1
+        #100;
         cnt_dec=3'b000;
-        #1000;
-        cnt_dec=3'b100;
-        #2000;
+        #20;
+        cnt_dec=3'b100;//年份减1
+        #100;
         cnt_dec=3'b000;
-        #1000;
+        #20;
         $stop;
     end
 

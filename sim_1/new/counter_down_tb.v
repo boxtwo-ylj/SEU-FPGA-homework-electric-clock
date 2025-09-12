@@ -48,6 +48,8 @@ module counter_down_tb();
         cnt_inc = 3'b000;
         cnt_dec = 3'b000;
         cnt_down = 0;
+        start_flag = 0;
+        reset_flag = 0;
 
         // Wait for global reset to finish
         #10;
