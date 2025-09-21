@@ -794,4 +794,5 @@ module electric_clock(
                     alarm_state<=0;
             endcase
     end
+   
 endmodule
