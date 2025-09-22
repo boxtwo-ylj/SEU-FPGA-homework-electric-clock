@@ -475,7 +475,7 @@ module electric_clock(
                     state1<=COUNTER_D_SET;
                     state2<=0;
                 end
-                else if(key_state==3)begin
+                else if(key_state==3)begin//³¤°´ÉèÖÃÄÖÖÓ
                     if(alarm_set[0]==0)begin
                         alarm_set[0]<=1;
                         Data_alarm_s1<=Data_alarm;
